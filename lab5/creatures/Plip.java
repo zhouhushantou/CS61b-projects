@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * An implementation of a motile pacifist photosynthesizer.
@@ -57,7 +58,9 @@ public class Plip extends Creature {
      * that you get this exactly correct.
      */
     public Color color() {
-        g = 63;
+        r=99;
+        b= 76;
+        g=(int)(96*energy+63);
         return color(r, g, b);
     }
 
@@ -74,7 +77,10 @@ public class Plip extends Creature {
      * private static final variable. This is not required for this lab.
      */
     public void move() {
-        // TODO
+        energy-=0.15;
+        if (energy<0){
+            energy=0;
+        }
     }
 
 
@@ -82,7 +88,10 @@ public class Plip extends Creature {
      * Plips gain 0.2 energy when staying due to photosynthesis.
      */
     public void stay() {
-        // TODO
+        energy+=0.2;
+        if (energy>2){
+            energy=2;
+        }
     }
 
     /**
@@ -91,7 +100,9 @@ public class Plip extends Creature {
      * Plip.
      */
     public Plip replicate() {
-        return this;
+        energy=energy/2;
+        Plip baby=new Plip(energy);
+        return baby;
     }
 
     /**
@@ -107,22 +118,52 @@ public class Plip extends Creature {
      * scoop on how Actions work. See SampleCreature.chooseAction()
      * for an example to follow.
      */
+    private Direction randomNeighbor(Deque<Direction> emptyNeighbors){
+        if (emptyNeighbors.size()==1){
+            return emptyNeighbors.getFirst();
+        }
+        Random ran = new Random();
+        int x = ran.nextInt(emptyNeighbors.size()-1);
+        int i=0;
+        while (i<x) {
+            emptyNeighbors.removeFirst();
+            i++;
+        }
+        return emptyNeighbors.getFirst();
+    }
     public Action chooseAction(Map<Direction, Occupant> neighbors) {
         // Rule 1
         Deque<Direction> emptyNeighbors = new ArrayDeque<>();
         boolean anyClorus = false;
         // TODO
         // (Google: Enhanced for-loop over keys of NEIGHBORS?)
-        // for () {...}
+         for (Direction key:neighbors.keySet()) {
+                if (neighbors.get(key).name().equals("empty")){
+                    emptyNeighbors.add(key);
+                }
+                if (neighbors.get(key).name().equals("clorus")){
+                    anyClorus=true;
+                }
+         }
 
-        if (false) { // FIXME
-            // TODO
+        if (emptyNeighbors.size()==0) {
+            return  new Action(Action.ActionType.STAY);
         }
 
         // Rule 2
         // HINT: randomEntry(emptyNeighbors)
+        if((energy>1)&&(emptyNeighbors.size()>0)){
+            return new Action(Action.ActionType.REPLICATE,randomNeighbor(emptyNeighbors));
+        }
 
         // Rule 3
+        if ((anyClorus==true)&&(emptyNeighbors.size()>0)){
+            Random ran = new Random();
+            int x = ran.nextInt(1);
+            if (x==0){
+                return new Action(Action.ActionType.MOVE,randomNeighbor(emptyNeighbors));
+            }
+        }
 
         // Rule 4
         return new Action(Action.ActionType.STAY);

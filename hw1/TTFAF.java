@@ -1,4 +1,4 @@
-import java.io.ByteArrayInputStream;
+/**import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
@@ -9,7 +9,7 @@ import java.util.zip.GZIPInputStream;
  * Requires completion of CS 61B Homework 1.
  *
  * @author Eli Lipsitz
- */
+
 public class TTFAF {
     public static void main(String[] args) {
         try {
@@ -183,3 +183,4 @@ public class TTFAF {
         + "8wUeQqcz27kPJxu43Hxw06TZAE7u4PLOParlZEg8gv6CqnAAZQmXyw9nVEgRopMcLnNTqKj9wwb0"
         + "6zR/5Bb/AT7+4c9/APjxG/j/XQ2yXpqSAA==";
 }
+*/
