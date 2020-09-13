@@ -1,11 +1,14 @@
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.List;
 
 public class SeparableEnemySolver {
 
     Graph g;
-
+    boolean seperatable;
+    Map<String,assist> nodes;
     /**
      * Creates a SeparableEnemySolver for a file with name filename. Enemy
      * relationships are biderectional (if A is an enemy of B, B is an enemy of A).
@@ -23,8 +26,75 @@ public class SeparableEnemySolver {
      * Returns true if input is separable, false otherwise.
      */
     public boolean isSeparable() {
-        // TODO: Fix me
-        return false;
+        seperatable=true;
+        Set<String> nd= g.labels();
+       nodes =new HashMap<>();
+        for(String s:nd){
+            nodes.put(s,new assist(false,0));
+        }
+
+        for(String s:nd) {
+            if (nodes.get(s).group == 0) {
+                nodes.put(s, new assist(true, 1));
+            }
+            findNeighbor(s, 0);
+            if (!seperatable)
+                return seperatable;
+        }
+        return seperatable;
+    }
+
+    private void findNeighbor(String s,int group){
+        Set<String> nb;
+        if (!nodes.get(s).mark) {
+            if (group == 1)
+                nodes.put(s, new assist(true, 1));
+            else
+                nodes.put(s, new assist(true, 2));
+        }
+        else {
+            if ((group == 1) && (nodes.get(s).group == 2)) {
+                seperatable = false;
+                return;
+            }
+            if ((group == 2) && (nodes.get(s).group == 1)) {
+                seperatable = false;
+                return;
+            }
+        }
+        nb = g.neighbors(s);
+        for (String sn : nb) {
+            if(nodes.get(sn).mark){
+                if (nodes.get(sn).group==nodes.get(s).group) {
+                    seperatable = false;
+                }
+                continue;
+            }
+            if (nodes.get(s).group == 1) {
+                findNeighbor(sn, 2);
+            }
+            else
+                findNeighbor(sn, 1);
+        }
+    }
+
+    public class assist{
+        boolean mark=false;
+        int group=0;
+        public assist(boolean mark, int group){
+            this.mark=mark;
+            this.group=group;
+        }
+    }
+
+    public static void main(String[] args) {
+        Graph g = new Graph();
+        g.connect("A", "B");
+        g.connect("C", "D");
+        g.connect("E", "D");
+        g.connect("E", "C");
+        SeparableEnemySolver A=new SeparableEnemySolver(g);
+        A.isSeparable();
     }
 
 
