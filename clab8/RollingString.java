@@ -1,3 +1,6 @@
+import java.util.Deque;
+import java.util.LinkedList;
+
 /**
  * A String-like class that allows users to add and remove characters in the String
  * in constant time and have a constant-time hash function. Used for the Rabin-Karp
@@ -11,19 +14,25 @@ class RollingString{
      */
     static final int UNIQUECHARS = 128;
 
+
     /**
      * The prime base that we are using as our mod space. Happens to be 61B. :)
      * DO NOT CHANGE THIS.
      */
     static final int PRIMEBASE = 6113;
-
+    static final int CST=((UNIQUECHARS%PRIMEBASE)*UNIQUECHARS) % PRIMEBASE ;
     /**
      * Initializes a RollingString with a current value of String s.
      * s must be the same length as the maximum length.
      */
+    Deque<Character> A;
+    int hashcode=0;
     public RollingString(String s, int length) {
         assert(s.length() == length);
-        /* FIX ME */
+        A=new LinkedList<>();
+        for (int i=0;i<length;i++)
+            A.add(s.charAt(i));
+        hashcode=this.hashCode();
     }
 
     /**
@@ -32,7 +41,9 @@ class RollingString{
      * Should be a constant-time operation.
      */
     public void addChar(char c) {
-        /* FIX ME */
+        A.add(c);
+        char old=A.removeFirst();
+        hashcode=((hashcode+PRIMEBASE-old*CST) * UNIQUECHARS+c)%PRIMEBASE;
     }
 
 
@@ -43,8 +54,11 @@ class RollingString{
      */
     public String toString() {
         StringBuilder strb = new StringBuilder();
-        /* FIX ME */
-        return "";
+        Deque<Character> B=new LinkedList<>(this.A);
+        while (B.size()>0) {
+            strb.append(B.removeFirst());
+        }
+        return strb.toString();
     }
 
     /**
@@ -52,8 +66,7 @@ class RollingString{
      * Should be a constant-time operation.
      */
     public int length() {
-        /* FIX ME */
-        return -1;
+        return A.size();
     }
 
 
@@ -64,7 +77,10 @@ class RollingString{
      */
     @Override
     public boolean equals(Object o) {
-        /* FIX ME */
+        String o1=o.toString();
+        String thisString=this.toString();
+        if (thisString.equals(o1))
+                return true;
         return false;
     }
 
@@ -74,7 +90,17 @@ class RollingString{
      */
     @Override
     public int hashCode() {
-        /* FIX ME */
-        return -1;
+        long t=0;
+        Deque<Character> B=new LinkedList<>(this.A);
+        while (B.size()>0) {
+            t=t*UNIQUECHARS+B.removeFirst();
+        }
+        return (int)(t%PRIMEBASE);
+    }
+
+    public static void main(String[] argm){
+        RollingString test=new RollingString("hello",5);
+       test.addChar('t');
+       test.addChar('p');
     }
 }

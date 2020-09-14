@@ -4,8 +4,8 @@ import static org.junit.Assert.*;
 public class RabinKarpAlgorithmTests {
     @Test
     public void basic() {
-        String input = "hello";
-        String pattern = "ell";
-        assertEquals(1, RabinKarpAlgorithm.rabinKarp(input, pattern));
+        String input = "helloffggdjk";
+        String pattern = "ggd";
+        assertEquals(7, RabinKarpAlgorithm.rabinKarp(input, pattern));
     }
 }
