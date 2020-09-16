@@ -11,15 +11,44 @@ import java.util.List;
 public class BnBSolver {
 
     public BnBSolver(List<Bear> bears, List<Bed> beds) {
-        // TODO: Fix me.
+        List<Bear> bearLess=new ArrayList<Bear>();
+        List<Bear> bearGreater=new ArrayList<Bear>();
+        List<Bed> bedLess=new ArrayList<Bed>();
+        List<Bed> bedGreater=new ArrayList<Bed>();
+        Bear bearPivot;
+        Bed bedPivot=beds.get(0);
+
+        for (int i=0;i<bears.size();i++){
+            if (bears.get(i).compareTo(bedPivot)){
+                bearPivot=bears.get(i);
+                break;
+            }
+        }
+        bears=solvedBears(bears,bearPivot, bedPivot,bearLess,bearGreater);
+        beds=solvedBears(beds,bearPivot, bedPivot,bedLess,bedGreater);
+        BnBSolver(bearLess,bedLess);
+        BnBSolver(bearGreater,bedGreater);
+
     }
 
     /**
      * Returns List of Bears such that the ith Bear is the same size as the ith Bed of solvedBeds().
      */
-    public List<Bear> solvedBears() {
-        // TODO: Fix me.
-        return null;
+    public List<Bear> solvedBears(List<Bear> bears,Bear bearPivot,Bed bedPivot,
+                                  List<Bear> bearLess,List<Bear> bearGreater) {
+        Bear temp;
+        for (int i=0;i<bears.size();i++){
+            temp=bears.get(i);
+            if (temp.compareTo(bedPivot)<0) {
+                bearLess.add(temp);
+                continue;
+            }
+            if (temp.compareTo(bedPivot)>0) {
+                bearGreater.add(temp);
+                continue;
+            }
+        }
+        return bearLess.addAll(bearPivot).addAll(bearGreater);
     }
 
     /**
@@ -29,4 +58,5 @@ public class BnBSolver {
         // TODO: Fix me.
         return null;
     }
+
 }

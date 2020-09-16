@@ -1,6 +1,7 @@
 import edu.princeton.cs.algs4.Queue;
 import org.junit.Assert;
 import org.junit.Test;
+import java.util.Random;
 
 public class TestSortAlgs {
 
