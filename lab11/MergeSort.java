@@ -42,8 +42,14 @@ public class MergeSort {
      */
     private static <Item extends Comparable> Queue<Queue<Item>>
             makeSingleItemQueues(Queue<Item> items) {
-        // Your code here!
-        return null;
+        Queue<Queue<Item>> A=new Queue<Queue<Item>>();
+        Queue<Item> B;
+        while (!items.isEmpty()) {
+            B=new Queue<>();
+            B.enqueue(items.dequeue());
+            A.enqueue(B);
+        }
+        return A;
     }
 
     /**
@@ -61,9 +67,12 @@ public class MergeSort {
      */
     private static <Item extends Comparable> Queue<Item> mergeSortedQueues(
             Queue<Item> q1, Queue<Item> q2) {
-        // Your code here!
-        return null;
-    }
+        Queue<Item> result=new Queue<>();
+        while ((!q1.isEmpty())||(!q2.isEmpty())){
+            result.enqueue(getMin(q1,q2));
+        }
+        return result;
+     }
 
     /**
      * Returns a Queue that contains the given items sorted from least to greatest.
@@ -77,7 +86,20 @@ public class MergeSort {
      */
     public static <Item extends Comparable> Queue<Item> mergeSort(
             Queue<Item> items) {
-        // Your code here!
-        return items;
+        MergeSort A=new MergeSort();
+        Queue<Queue<Item>> B=A.makeSingleItemQueues(items);
+        while (B.size()>1){
+            B.enqueue(A.mergeSortedQueues(B.dequeue(),B.dequeue()));
+        }
+        return B.dequeue();
+    }
+
+    public static void main(String[] args) {
+        Queue<String> tas = new Queue<String>();
+        tas.enqueue("Joe");
+        tas.enqueue("Omar");
+        tas.enqueue("Itai");
+        MergeSort A=new MergeSort();
+        Queue<Queue<String>> B=A.makeSingleItemQueues(tas);
     }
 }
