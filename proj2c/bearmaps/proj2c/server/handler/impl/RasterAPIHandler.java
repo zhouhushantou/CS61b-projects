@@ -12,10 +12,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import static bearmaps.proj2c.utils.Constants.SEMANTIC_STREET_GRAPH;
 import static bearmaps.proj2c.utils.Constants.ROUTE_LIST;
@@ -84,12 +82,105 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
-        //System.out.println(requestParams);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
-                + "your browser.");
+        //Calculate the LonDPP of request parameter
+        double requestLonDPP=(requestParams.get("lrlon")-requestParams.get("ullon"))/requestParams.get("w");
+
+        //Find the depth of the tiles to be rastered
+        double fileLonDPP=(bearmaps.proj2c.utils.Constants.ROOT_LRLON - bearmaps.proj2c.utils.Constants.ROOT_ULLON)
+                /bearmaps.proj2c.utils.Constants.TILE_SIZE;
+        int depth=0;
+        while (fileLonDPP>requestLonDPP){
+            fileLonDPP=fileLonDPP/2;
+            depth++;
+        }
+        if (depth>7)
+           depth=7;
+
+        //Find the tiles that cover the target area
+        int N=(int)Math.pow(2,depth);
+        double dlon=(bearmaps.proj2c.utils.Constants.ROOT_LRLON - bearmaps.proj2c.utils.Constants.ROOT_ULLON)/N;
+        double dlat=(bearmaps.proj2c.utils.Constants.ROOT_ULLAT - bearmaps.proj2c.utils.Constants.ROOT_LRLAT)/N;
+        double tileLonMin,tileLonMax,tileLatMin,tileLatMax,AreaLonMin,AreaLonMax,AreaLatMin,AreaLatMax;
+        AreaLonMin=requestParams.get("ullon");
+        AreaLonMax=requestParams.get("lrlon");
+        AreaLatMin=requestParams.get("lrlat");
+        AreaLatMax=requestParams.get("ullat");
+        Queue<String> tiles=new ArrayDeque<>();
+        int imin=10000,jmin=10000,imax=0,jmax=0;
+        for(int i=0;i<N;i++) {
+            for (int j = 0; j < N; j++) {
+                tileLonMin = bearmaps.proj2c.utils.Constants.ROOT_ULLON + j * dlon;
+                tileLonMax = tileLonMin + dlon;
+                tileLatMax = bearmaps.proj2c.utils.Constants.ROOT_ULLAT - i * dlat;
+                tileLatMin = tileLatMax - dlat;
+                if (insideArea(tileLonMin, tileLonMax, tileLatMin, tileLatMax, AreaLonMin, AreaLonMax, AreaLatMin, AreaLatMax)) {
+                    if (i>imax)
+                        imax=i;
+                    if(i<imin)
+                        imin=i;
+                    if(j>jmax)
+                        jmax=j;
+                    if(j<jmin)
+                        jmin=j;
+                    tiles.add("d" + depth + "_x" + j + "_y" + i+".png");
+                }
+            }
+        }
+        if((imax<imin)||(jmax<jmin)) {
+            results.put("render_grid","");
+            results.put("raster_ul_lon",bearmaps.proj2c.utils.Constants.ROOT_ULLON + jmin * dlon);
+            results.put("raster_ul_lat",bearmaps.proj2c.utils.Constants.ROOT_ULLAT - imin * dlat);
+            results.put("raster_lr_lon",bearmaps.proj2c.utils.Constants.ROOT_ULLON + (jmax+1) * dlon);
+            results.put("raster_lr_lat",bearmaps.proj2c.utils.Constants.ROOT_ULLAT - (imax+1) * dlat);
+            results.put("depth",depth);
+            results.put("query_success", false);
+            return results;
+        }
+        String[][] tileResult=new String[imax-imin+1][jmax-jmin+1];
+        for(int i=0;i<=imax-imin;i++) {
+            for (int j = 0; j <= jmax - jmin; j++) {
+                tileResult[i][j] =tiles.poll();
+            }
+        }
+        results.put("render_grid",tileResult);
+        results.put("raster_ul_lon",bearmaps.proj2c.utils.Constants.ROOT_ULLON + jmin * dlon);
+        results.put("raster_ul_lat",bearmaps.proj2c.utils.Constants.ROOT_ULLAT - imin * dlat);
+        results.put("raster_lr_lon",bearmaps.proj2c.utils.Constants.ROOT_ULLON + (jmax+1) * dlon);
+        results.put("raster_lr_lat",bearmaps.proj2c.utils.Constants.ROOT_ULLAT - (imax+1) * dlat);
+        results.put("depth",depth);
+        results.put("query_success",true);
         return results;
+    }
+
+    private boolean insideArea(double tileLonMin,double tileLonMax, double tileLatMin, double tileLatMax,
+                               double AreaLonMin,double AreaLonMax,double AreaLatMin, double AreaLatMax){
+        //if the lowerleft corner is inside the area
+        if ((tileLatMin<AreaLatMax)&&(tileLatMin>AreaLatMin)&&(tileLonMin<AreaLonMax)&&(tileLonMin>AreaLonMin))
+            return true;
+        //if the lowerright corner is inside the area
+        if ((tileLatMin<AreaLatMax)&&(tileLatMin>AreaLatMin)&&(tileLonMax<AreaLonMax)&&(tileLonMax>AreaLonMin))
+            return true;
+        //if the upperleft corner is inside the area
+        if ((tileLatMax<AreaLatMax)&&(tileLatMax>AreaLatMin)&&(tileLonMin<AreaLonMax)&&(tileLonMin>AreaLonMin))
+            return true;
+        //if the upperright corner is inside the area
+        if ((tileLatMax<AreaLatMax)&&(tileLatMax>AreaLatMin)&&(tileLonMax<AreaLonMax)&&(tileLonMax>AreaLonMin))
+            return true;
+
+        //if the lowerleft corner of area is inside the tile
+        if ((AreaLatMin<tileLatMax)&&(AreaLatMin>tileLatMin)&&(AreaLonMin<tileLonMax)&&(AreaLonMin>tileLonMin))
+            return true;
+        //if the lowerright corner is inside the area
+        if ((AreaLatMin<tileLatMax)&&(AreaLatMin>tileLatMin)&&(AreaLonMax<tileLonMax)&&(AreaLonMax>tileLonMin))
+            return true;
+        //if the upperleft corner is inside the area
+        if ((AreaLatMax<tileLatMax)&&(AreaLatMax>tileLatMin)&&(AreaLonMin<tileLonMax)&&(AreaLonMin>tileLonMin))
+            return true;
+        //if the upperright corner is inside the area
+        if ((AreaLatMax<tileLatMax)&&(AreaLatMax>tileLatMin)&&(AreaLonMax<tileLonMax)&&(AreaLonMax>tileLonMin))
+            return true;
+        return false;
     }
 
     @Override
