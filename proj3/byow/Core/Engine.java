@@ -6,6 +6,7 @@ import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -54,6 +55,25 @@ public class Engine {
                 for (int j = y + 1; j < (y + ySize - 1); j++) {
                     space.add(new point(i, j));
                 }
+            }
+        }
+
+        public boolean isOverlap(room other){
+            int D = 1000000000, temp;
+            for (point pt : space) {
+                for (point tp : other.space) {
+                    temp = pt.dist(tp);
+                    if (temp < D) {
+                        D = temp;
+                    }
+                }
+            }
+
+            if (D<=1){
+                return true;
+            }
+            else{
+                return false;
             }
         }
     }
@@ -131,6 +151,55 @@ public class Engine {
         }
     }
 
+    public static class worldManager{
+        List<HashSet<room>> roomGroup=new ArrayList<>();
+
+        public void addConnection(room start,room end) {
+            if (!isConnected(start, end)) {
+                int g1=findGroup(start);
+                int g2=findGroup(end);
+                //if both room are not in the roomGroup
+                if((g1==-1)&&(g2==-1)){
+                    HashSet<room> T=new HashSet<>();
+                    T.add(start);
+                    T.add(end);
+                    roomGroup.add(T);
+                }
+                //if both room are in different roomGroup
+                if((g1>-1)&&(g2>-1)){
+                    roomGroup.get(g1).addAll(roomGroup.get(g2));
+                    roomGroup.remove(g2);
+                }
+                //if g1 is in the group but g2 is not
+                if((g1>-1)&&(g2==-1)){
+                    roomGroup.get(g1).add(end);
+                }
+                //if g2 is in the group but g1 is not
+                if((g1==-1)&&(g2>-1)){
+                    roomGroup.get(g2).add(start);
+                }
+            }
+        }
+
+        public boolean isConnected(room A, room B){
+            int Ai=findGroup(A);
+            int Bi=findGroup(B);
+            if ((Ai==Bi)&&(Ai>=0))
+                return true;
+            return false;
+        }
+
+        private int findGroup(room rm){
+            for (int i=0;i<roomGroup.size();i++){
+                if (roomGroup.get(i).contains(rm)){
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+    }
+
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
     public static final int WIDTH = 80;
@@ -192,11 +261,12 @@ public class Engine {
         room r1;
         List<room> roomList=new ArrayList<>();
         int xin, yin, xSizein, ySizein;
-        for (int i = 0; i < 8; i++) {
+        int nRoom=RANDOM.nextInt(30);
+        for (int i = 0; i < nRoom; i++) {
             xin = RANDOM.nextInt(WIDTH - 2);
             yin = RANDOM.nextInt(HEIGHT - 2);
-            xSizein = RANDOM.nextInt(WIDTH / 4) + 3;
-            ySizein = RANDOM.nextInt(HEIGHT / 4) + 3;
+            xSizein = RANDOM.nextInt(WIDTH / 6) + 3;
+            ySizein = RANDOM.nextInt(HEIGHT / 6) + 3;
             //System.out.println("xin:"+xin+" yin:"+yin+" xSize:"+xSizein+" ySize"+ySizein);
             if (((xin + xSizein) < WIDTH) && ((yin + ySizein) < HEIGHT)) {
                 r1 = new room(xin, yin, xSizein, ySizein);
@@ -211,13 +281,24 @@ public class Engine {
             }
         }
 
+        //check if there are rooms overlap with each other
+        worldManager worldConnect=new worldManager();
+        for (room rt1:roomList) {
+            for (room rt2 : roomList) {
+                 if(rt1.isOverlap(rt2)){
+                     worldConnect.addConnection(rt1,rt2);
+                 }
+            }
+        }
+
         //generate the hallway
         hallway h1;
         for (room rt1:roomList){
             for (room rt2:roomList){
-                if (!rt2.equals(rt1))
+                if (!worldConnect.isConnected(rt1,rt2))
                 {
                     h1=new hallway(rt1,rt2);
+                    worldConnect.addConnection(rt1,rt2);
                     for (point pt : h1.wall) {
                         if (!finalWorldFrame[pt.x][pt.y].equals(Tileset.FLOOR))
                             finalWorldFrame[pt.x][pt.y] = Tileset.WALL;
@@ -259,7 +340,7 @@ public class Engine {
 
     public static void main(String[] args) {
         Engine A = new Engine();
-        TETile[][] world = A.interactWithInputString("N6998461S");
+        TETile[][] world = A.interactWithInputString("N63212471S");
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
         // draws the world to the screen
